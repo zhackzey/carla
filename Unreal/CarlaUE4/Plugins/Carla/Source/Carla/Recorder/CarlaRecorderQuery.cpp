@@ -91,7 +91,13 @@ std::string CarlaRecorderQuery::QueryInfo(std::string Filename, bool bShowAll)
       // frame
       case static_cast<char>(CarlaRecorderPacketId::FrameStart):
         Frame.Read(File);
-        bFramePrinted = false;
+        if (bShowAll)
+        {
+          PrintFrame(Info);
+          bFramePrinted = true;
+        }
+        else
+          bFramePrinted = false;
         break;
 
       // events add
@@ -170,8 +176,23 @@ std::string CarlaRecorderQuery::QueryInfo(std::string Filename, bool bShowAll)
         break;
 
       case static_cast<char>(CarlaRecorderPacketId::Position):
-        // Info << "Positions\n";
-        SkipPacket();
+        if (bShowAll)
+        {
+          ReadValue<uint16_t>(File, Total);
+          if (Total > 0 && !bFramePrinted)
+          {
+            PrintFrame(Info);
+            bFramePrinted = true;
+          }
+          Info << " Positions: " << Total << std::endl;
+          for (i = 0; i < Total; ++i)
+          {
+            Position.Read(File);
+            Info << "  Id: " << Position.DatabaseId << " Location (" << Position.Location.X << ", " << Position.Location.Y << ", " << Position.Location.Z << ") Rotation (" <<  Position.Rotation.X << ", " << Position.Rotation.Y << ", " << Position.Rotation.Z << ")" << std::endl;
+          }
+        }
+        else
+          SkipPacket();
         break;
 
       case static_cast<char>(CarlaRecorderPacketId::State):

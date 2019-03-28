@@ -24,9 +24,9 @@ ACarlaRecorder::ACarlaRecorder(const FObjectInitializer &ObjectInitializer)
   Disable();
 }
 
-std::string ACarlaRecorder::ShowFileInfo(std::string Path, std::string Name)
+std::string ACarlaRecorder::ShowFileInfo(std::string Path, std::string Name, bool bShowAll)
 {
-  return Query.QueryInfo(Path + Name);
+  return Query.QueryInfo(Path + Name, bShowAll);
 }
 
 std::string ACarlaRecorder::ShowFileCollisions(std::string Path, std::string Name, char Type1, char Type2)
