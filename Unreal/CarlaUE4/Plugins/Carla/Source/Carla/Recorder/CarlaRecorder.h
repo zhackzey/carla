@@ -99,7 +99,7 @@ public:
   }
 
   // forwarded to replayer
-  std::string ShowFileInfo(std::string Path, std::string Name);
+  std::string ShowFileInfo(std::string Path, std::string Name, bool bShowAll = false);
   std::string ShowFileCollisions(std::string Path, std::string Name, char Type1, char Type2);
   std::string ShowFileActorsBlocked(std::string Path, std::string Name, double MinTime = 30, double MinDistance = 10);
   std::string ReplayFile(std::string Path, std::string Name, double TimeStart, double Duration, uint32_t FollowId);
