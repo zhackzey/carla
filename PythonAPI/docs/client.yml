@@ -53,30 +53,41 @@
     - def_name: get_world
       params:
       doc: >
-        Get the server version as a string
+        Get the world object from where we can get other information about the map
     # --------------------------------------
     - def_name: get_available_maps
       params:
       doc: >
+        Get a list of strings of the maps available on server. The result can be something like:
+          '/Game/Carla/Maps/Town01'
+          '/Game/Carla/Maps/Town02'
+          '/Game/Carla/Maps/Town03'
+          '/Game/Carla/Maps/Town04'
+          '/Game/Carla/Maps/Town05'
+          '/Game/Carla/Maps/Town06'
+          '/Game/Carla/Maps/Town07'
     # --------------------------------------
     - def_name: reload_world
       params:
       raises: RuntimeError
       doc: >
+        Start again current world
     # --------------------------------------
     - def_name: load_world
       params:
       - param_name: map_name
         type: str
         doc: >
-          Name of the map to load
+          Name of the map to load, like '/Game/Carla/Maps/Town01'
+      doc: >
+        Load one of the available worlds on server
     # --------------------------------------
     - def_name: start_recorder
       params:
       - param_name: filename
         type: str
         doc: >
-          Name of the file to create
+          Name of the file to write the recorded data
       doc: >
         If we use a simple name like 'recording.log' then it will be saved at server folder 'CarlaUE4/Saved/recording.log'.
         If we use some folder in the name, then it will be considered to be an absolute path, like '/home/carla/recording.log'.
@@ -98,7 +109,7 @@
         doc: >
           Show all detailed info, or just a summary
       doc: >
-        Will show info about the recorded file.
+        Will show info about the recorded file (frames, times, events, state, positions...)
         We have the option to show all the details per frame, that includes all the traffic light states, position of all actors, and animations data.
     # --------------------------------------
     - def_name: show_recorder_collisions
@@ -126,7 +137,7 @@
           'o' = Other
           'a' = Any
         So, if you want to see only collisions about a vehicle and a walker, we would use for category1 'v' and category2 'w'.
-        Or if you want all the collisions (filter off) you can use 'a' as categories.
+        Or if you want all the collisions (filter off) you can use 'a' as both categories.
     # --------------------------------------
     - def_name: show_recorder_actors_blocked
       params:
@@ -142,7 +153,7 @@
       - param_name: min_distance
         type: float
         doc: >
-          How many centimeters needs to displace an actor in order to not be considered as blocked
+          How many centimeters needs to move the actor in order to be considered as moving, and not blocked
       doc: >
         Shows which actors seems blocked by some reason.
         The idea is to calculate which actors are not moving as much as 'min_distance' for a period of 'min_time'.
