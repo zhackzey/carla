@@ -57,6 +57,10 @@ namespace geom {
       return a.x * b.x + a.y * b.y;
     }
 
+    static auto Cross(const Vector3D &a, const Vector3D &b) {
+      return Vector3D(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+    }
+
     static auto DistanceSquared(const Vector3D &a, const Vector3D &b) {
       return Square(b.x - a.x) + Square(b.y - a.y) + Square(b.z - a.z);
     }

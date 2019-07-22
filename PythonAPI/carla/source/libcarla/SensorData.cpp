@@ -13,6 +13,7 @@
 #include <carla/sensor/data/CollisionEvent.h>
 #include <carla/sensor/data/ObstacleDetectionEvent.h>
 #include <carla/sensor/data/Image.h>
+#include <carla/sensor/data/IMUEvent.h>
 #include <carla/sensor/data/LaneInvasionEvent.h>
 #include <carla/sensor/data/LidarMeasurement.h>
 #include <carla/sensor/data/GnssEvent.h>
@@ -71,6 +72,13 @@ namespace data {
         << ", lat=" << meas.GetLatitude()
         << ", lon=" << meas.GetLongitude()
         << ", alt=" << meas.GetAltitude()
+        << ')';
+    return out;
+  }
+
+  std::ostream &operator<<(std::ostream &out, const IMUEvent &meas) {
+    out << "IMUEvent(frame=" << meas.GetFrame()
+        << ", timestamp=" << meas.GetTimestamp()
         << ')';
     return out;
   }
@@ -233,6 +241,13 @@ void export_sensor_data() {
     .add_property("latitude", &csd::GnssEvent::GetLatitude)
     .add_property("longitude", &csd::GnssEvent::GetLongitude)
     .add_property("altitude", &csd::GnssEvent::GetAltitude)
+    .def(self_ns::str(self_ns::self))
+  ;
+
+  class_<csd::IMUEvent, bases<cs::SensorData>, boost::noncopyable, boost::shared_ptr<csd::IMUEvent>>("IMUEvent", no_init)
+    .add_property("accelerometer", &csd::IMUEvent::GetAccelerometer)
+    .add_property("gyroscope", &csd::IMUEvent::GetGyroscope)
+    .add_property("compass", &csd::IMUEvent::GetCompass)
     .def(self_ns::str(self_ns::self))
   ;
 }

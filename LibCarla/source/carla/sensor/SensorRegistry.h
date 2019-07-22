@@ -25,6 +25,7 @@
 class ACollisionSensor;
 class ADepthCamera;
 class AGnssSensor;
+class AIMUSensor;
 class ALaneInvasionSensor;
 class AObstacleDetectionSensor;
 class ARayCastLidar;
@@ -50,6 +51,7 @@ namespace sensor {
     std::pair<ARayCastLidar *, s11n::LidarSerializer>,
     std::pair<ACollisionSensor *, s11n::CollisionEventSerializer>,
     std::pair<AGnssSensor *, s11n::NoopSerializer>,
+    std::pair<AIMUSensor *, s11n::NoopSerializer>,
     std::pair<ALaneInvasionSensor *, s11n::NoopSerializer>,
     std::pair<AObstacleDetectionSensor *, s11n::ObstacleDetectionEventSerializer>
   >;
@@ -69,6 +71,7 @@ namespace sensor {
 #include "Carla/Sensor/SemanticSegmentationCamera.h"
 #include "Carla/Sensor/WorldObserver.h"
 #include "Carla/Sensor/GnssSensor.h"
+#include "Carla/Sensor/IMUSensor.h"
 #include "Carla/Sensor/LaneInvasionSensor.h"
 #include "Carla/Sensor/ObstacleDetectionSensor.h"
 
