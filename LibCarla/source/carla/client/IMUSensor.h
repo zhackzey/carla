@@ -38,10 +38,14 @@ namespace client {
       return _callback_id != 0u;
     }
 
-  private:
+    void SetNoise(std::function<void(geom::Vector3D)> in_noise) {
+      noise = in_noise;
+    }
     /// User defined parameters
-    carla::geom::Vector3D _bias;
+    geom::Vector3D bias;
+    std::function<void(geom::Vector3D)> noise;
 
+  private:
     std::atomic_size_t _callback_id{0u};
   };
 

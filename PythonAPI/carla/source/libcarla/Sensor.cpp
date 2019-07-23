@@ -45,6 +45,10 @@ void export_sensor() {
   class_<cc::IMUSensor, bases<cc::Sensor>, boost::noncopyable, boost::shared_ptr<cc::IMUSensor>>
       ("IMUSensor", no_init)
     .def(self_ns::str(self_ns::self))
+    .def_readwrite("bias", &cc::IMUSensor::bias)
+    .def("noise", +[](cc::IMUSensor& self, boost::python::object object) {
+      self.SetNoise(object);
+    })
   ;
 
   class_<cc::GnssSensor, bases<cc::Sensor>, boost::noncopyable, boost::shared_ptr<cc::GnssSensor>>

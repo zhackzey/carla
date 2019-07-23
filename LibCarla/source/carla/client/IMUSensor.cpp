@@ -27,11 +27,13 @@ namespace client {
     IMUCallback(
     ActorId sensor_id,
     const Vehicle &vehicle,
-    carla::geom::Vector3D &bias,
+    geom::Vector3D &bias,
+    std::function<void(geom::Vector3D)> noise,
     Sensor::CallbackFunctionType && user_callback)
       : _sensor_id(sensor_id),
-        _parent_id(vehicle.GetId()),
+        _vehicle_id(vehicle.GetId()),
         _bias(bias),
+        _noise(noise),
         _callback(std::move(user_callback)) {}
 
     void Tick(const WorldSnapshot &snapshot);
@@ -40,87 +42,50 @@ namespace client {
 
     ActorId _sensor_id;
 
-    ActorId _parent_id;
+    ActorId _vehicle_id;
 
     carla::geom::Vector3D _bias;
-
-    // Additional stored values
-    carla::geom::Vector3D _prev_sensor_location;
-    carla::geom::Vector3D _prev_sensor_velocity;
-    carla::geom::Vector3D _prev_sensor_forward;
-
+    std::function<void(geom::Vector3D)> _noise;
     Sensor::CallbackFunctionType _callback;
   };
 
-  float getAngleFromVectors(geom::Vector3D &a, geom::Vector3D &b) {
-    return atan2f(geom::Math::Cross(a, b).Length(), geom::Math::Dot(a, b));
-  }
-
   void IMUCallback::Tick(const WorldSnapshot &snapshot) {
     // Take parent and child snapshots.
-    auto parent_snapshot = snapshot.Find(_parent_id);
-    if (!parent_snapshot) {
+    auto vehicle_snapshot = snapshot.Find(_vehicle_id);
+    if (!vehicle_snapshot) {
+      return;
+    }
+    // Obtain rotation
+    auto sensor_snapshot = snapshot.Find(_sensor_id);
+    if (!sensor_snapshot) {
       return;
     }
 
-    // TODO: Provide data atomicity
-    // First frame it'll be null.
-    // if ((prev == nullptr) && _bounds.compare_exchange(&prev, next)) {
-    //   return;
-    // }
+    // Obtain sensor world acceleration
+    geom::Vector3D location = static_cast<geom::Vector3D>(sensor_snapshot->transform.location);
 
-    auto sensor_snapshot = snapshot.Find(_sensor_id);
-
-    // Obtain rotation
-    auto parent_transform = parent_snapshot->transform;
+    auto vehicle_acceleration = vehicle_snapshot->acceleration;
+    sensor_snapshot->transform.TransformPoint(vehicle_acceleration);
+    auto acceleration = sensor_snapshot->acceleration + vehicle_acceleration - location;
 
     // Obtain sensor world angular velocity
-    auto sensor_location = static_cast<geom::Vector3D>(sensor_snapshot->transform.location);
-    parent_transform.TransformPoint(sensor_location);
-
-    auto sensor_location_forward = sensor_location + sensor_snapshot->transform.rotation.GetForwardVector();
-    parent_transform.TransformPoint(sensor_location_forward);
-
-    auto sensor_forward = (sensor_location_forward - sensor_location).MakeUnitVector();
-
-    // Make it per axis
-    auto sensor_forward_xy = geom::Vector3D(sensor_forward.x, sensor_forward.y, 0.0f);
-    auto _prev_sensor_forward_xy = geom::Vector3D(_prev_sensor_forward.x, _prev_sensor_forward.y, 0.0f);
-    auto sensor_diff_angle_xy = getAngleFromVectors(sensor_forward_xy, _prev_sensor_forward_xy);
-
-    auto sensor_forward_xz = geom::Vector3D(sensor_forward.x, 0.0f, sensor_forward.z);
-    auto _prev_sensor_forward_xz = geom::Vector3D(_prev_sensor_forward.x, 0.0f, _prev_sensor_forward.z);
-    auto sensor_diff_angle_xz = getAngleFromVectors(sensor_forward_xz, _prev_sensor_forward_xz);
-
-    auto sensor_forward_yz = geom::Vector3D(0.0f, sensor_forward.y, sensor_forward.z);
-    auto _prev_sensor_forward_yz = geom::Vector3D(0.0f, _prev_sensor_forward.y, _prev_sensor_forward.z);
-    auto sensor_diff_angle_zy = getAngleFromVectors(sensor_forward_yz, _prev_sensor_forward_yz);
-
-    auto sensor_diff_angle = geom::Vector3D(sensor_diff_angle_xy, sensor_diff_angle_xz, sensor_diff_angle_zy);
-    float dt = static_cast<float>(snapshot.GetTimestamp().delta_seconds);
-    auto sensor_angular_velocity = sensor_diff_angle / dt;
-
-    // Obtain sensor acceleration
-    auto sensor_velocity = (sensor_location - _prev_sensor_location) / dt;
-    auto sensor_acceleration = (sensor_velocity - _prev_sensor_velocity) / dt;
+    auto vehicle_angular_velocity = vehicle_snapshot->angular_velocity;
+    sensor_snapshot->transform.TransformPoint(vehicle_angular_velocity);
+    auto angular_velocity = sensor_snapshot->angular_velocity + vehicle_angular_velocity - location;
 
     // Obtain sensor compass
     // TODO: Get the north from Waypoints API
-    auto compass_angle = geom::Vector3D(1.0f, 0.0f, 0.0f);
-
+    geom::Vector3D compass(0.0f, 0.0f, 1.0f);
+    sensor_snapshot->transform.TransformPoint(compass);
+    compass -= location;
     // Get angle from forward vector
     _callback(MakeShared<sensor::data::IMUEvent>(
         snapshot.GetTimestamp().frame,
         snapshot.GetTimestamp().elapsed_seconds,
         sensor_snapshot->transform,
-        sensor_acceleration + _bias,
-        sensor_angular_velocity,
-        compass_angle));
-
-    // Update for previous frame values
-    _prev_sensor_location = sensor_location;
-    _prev_sensor_velocity = sensor_velocity;
-    _prev_sensor_forward = sensor_forward;
+        acceleration + _bias,
+        angular_velocity + _bias,
+        compass + _bias));
 
   }
   // ===========================================================================
@@ -142,7 +107,7 @@ namespace client {
     auto cb = std::make_shared<IMUCallback>(
         GetId(),
         *vehicle,
-        _bias,
+        bias,
         std::move(callback));
 
     const size_t callback_id = episode->RegisterOnTickEvent([cb = std::move(cb)](const auto &snapshot) {
