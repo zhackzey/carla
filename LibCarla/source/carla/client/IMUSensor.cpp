@@ -28,12 +28,12 @@ namespace client {
     ActorId sensor_id,
     const Vehicle &vehicle,
     geom::Vector3D &bias,
-    std::function<void(geom::Vector3D)> noise,
+    std::function<float(void)>&& noise_function,
     Sensor::CallbackFunctionType && user_callback)
       : _sensor_id(sensor_id),
         _vehicle_id(vehicle.GetId()),
         _bias(bias),
-        _noise(noise),
+        _noise_function(std::move(noise_function)),
         _callback(std::move(user_callback)) {}
 
     void Tick(const WorldSnapshot &snapshot);
@@ -45,7 +45,9 @@ namespace client {
     ActorId _vehicle_id;
 
     carla::geom::Vector3D _bias;
-    std::function<void(geom::Vector3D)> _noise;
+
+    std::function<float(void)> _noise_function;
+
     Sensor::CallbackFunctionType _callback;
   };
 
@@ -78,6 +80,11 @@ namespace client {
     geom::Vector3D compass(0.0f, 0.0f, 1.0f);
     sensor_snapshot->transform.TransformPoint(compass);
     compass -= location;
+
+    // TODO: Apply noise to all axis
+    float noise = _noise_function();
+    acceleration.x += noise;
+
     // Get angle from forward vector
     _callback(MakeShared<sensor::data::IMUEvent>(
         snapshot.GetTimestamp().frame,
@@ -108,6 +115,7 @@ namespace client {
         GetId(),
         *vehicle,
         bias,
+        std::move(_noise_function),
         std::move(callback));
 
     const size_t callback_id = episode->RegisterOnTickEvent([cb = std::move(cb)](const auto &snapshot) {

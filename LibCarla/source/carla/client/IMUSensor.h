@@ -38,12 +38,14 @@ namespace client {
       return _callback_id != 0u;
     }
 
-    void SetNoise(std::function<void(geom::Vector3D)> in_noise) {
-      noise = in_noise;
+    void SetNoiseFunction(std::function<float(void)> noise_function) {
+      _noise_function = noise_function;
     }
+
     /// User defined parameters
     geom::Vector3D bias;
-    std::function<void(geom::Vector3D)> noise;
+
+    std::function<float(void)> _noise_function;
 
   private:
     std::atomic_size_t _callback_id{0u};
