@@ -7,6 +7,7 @@
 #pragma once
 
 #include "carla/client/ClientSideSensor.h"
+#include "carla/client/RandomEngine.h"
 
 #include <atomic>
 
@@ -38,6 +39,15 @@ namespace client {
       return _callback_id != 0u;
     }
 
+    void SetDefaultNoise(float mean = 0.0f, float stddev = 1.0f) {
+      RandomEngine random_engine;
+      uint32_t seed = random_engine.GenerateRandomSeed();
+      random_engine.Seed(seed);
+      _noise_function = [=]() mutable {
+        return random_engine.GetNormalDistribution(mean, stddev);
+      };
+    }
+
     void SetNoiseFunction(std::function<float(void)> noise_function) {
       _noise_function = noise_function;
     }
@@ -45,9 +55,10 @@ namespace client {
     /// User defined parameters
     geom::Vector3D bias;
 
-    std::function<float(void)> _noise_function;
+    std::function<float(void)> _noise_function = nullptr;
 
   private:
+
     std::atomic_size_t _callback_id{0u};
   };
 

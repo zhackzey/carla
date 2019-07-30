@@ -111,6 +111,10 @@ namespace client {
       return;
     }
 
+    if (_noise_function == nullptr) {
+      SetDefaultNoise();
+    }
+
     auto cb = std::make_shared<IMUCallback>(
         GetId(),
         *vehicle,

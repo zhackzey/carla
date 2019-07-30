@@ -18,38 +18,21 @@ static void SubscribeToStream(carla::client::Sensor &self, boost::python::object
   self.Listen(MakeCallback(std::move(callback)));
 }
 
-// template <typename First, typename... ArgsT>
-// static boost::python::object RandomFunction(boost::python::object &self, First noise_type, ArgsT... args) {
-//   return self.attr("set_noise")(
-//     [noise_type, args...](){ // Do std::forward and pass RandomEngine
-//       RandomEngine re;
-//       uint32_t seed = re.GenerateRandomSeed();
-//       re.Seed(seed);
-//       switch (noise_type) {
-//         case 0:
-//           return re.GetNormalDistribution(args...);
-//         default:
-//           return re.GetNormalDistribution(0.5, 1.0);
-//       }
-//     }
-//   );
-// }
-
 static void SetNoiseFunction(carla::client::IMUSensor &sensor, boost::python::object func) {
   // // Make sure the callback is actually callable.
-  // if (!PyCallable_Check(func.ptr())) {
-  //   PyErr_SetString(PyExc_TypeError, "callback argument must be callable!");
-  //   boost::python::throw_error_already_set();
-  // }
+  if (!PyCallable_Check(func.ptr())) {
+    PyErr_SetString(PyExc_TypeError, "callback argument must be callable!");
+    boost::python::throw_error_already_set();
+  }
 
   // We need to delete the callback while holding the GIL.
-  // using Deleter = carla::PythonUtil::AcquireGILDeleter;
-  // auto func_ptr = carla::SharedPtr<boost::python::object>{new boost::python::object(func), Deleter()};
+  using Deleter = carla::PythonUtil::AcquireGILDeleter;
+  auto func_ptr = carla::SharedPtr<boost::python::object>{new boost::python::object(func), Deleter()};
 
-  std::function<float(void)> noise = [noise_func=std::move(func)]() -> float{
+  std::function<float(void)> noise = [noise_func=std::move(func_ptr)]() -> float {
     try {
       carla::PythonUtil::AcquireGIL lock;
-      return boost::python::call<float>(noise_func.ptr(), boost::python::object());
+      return boost::python::call<float>(noise_func->ptr(), boost::python::object());
     } catch (const boost::python::error_already_set &) {
       PyErr_Print();
       return 0.0f;
@@ -89,7 +72,7 @@ void export_sensor() {
       ("IMUSensor", no_init)
     .def(self_ns::str(self_ns::self))
     .def_readwrite("bias", &cc::IMUSensor::bias)
-    // .def("set_noise", &RandomFunction<int,float,float>, (arg("type"), arg("mean"), arg("dev")))
+    .def("set_default_noise", &cc::IMUSensor::SetDefaultNoise, (arg("mean"), arg("stddev")))
     .def("set_custom_noise", &SetNoiseFunction, (arg("func")))
   ;
 
