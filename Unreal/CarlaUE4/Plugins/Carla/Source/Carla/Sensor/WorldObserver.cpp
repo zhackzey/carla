@@ -128,17 +128,17 @@ static carla::Buffer FWorldObserver_Serialize(
   // Write every actor.
   for (auto &&View : Registry)
   {
-    check(View.IsValid());
-    constexpr float TO_METERS = 1e-2;
-    const auto Velocity = TO_METERS * View.GetActor()->GetVelocity();
+    FVector Vel = View.GetVelocity();
+    FVector Ang = View.GetAngularVelocity();
+    FVector Acc = View.GetAcceleration();
 
+    check(View.IsValid());
     ActorDynamicState info = {
       View.GetActorId(),
       View.GetActor()->GetActorTransform(),
-      carla::geom::Vector3D{Velocity.X, Velocity.Y, Velocity.Z},
-      FWorldObserver_GetAngularVelocity(*View.GetActor()),
-      FWorldObserver_GetAcceleration(View, Velocity, DeltaSeconds),
-      FWorldObserver_GetActorState(View, Registry)
+      carla::geom::Vector3D {Vel.X, Vel.Y, Vel.Z},
+      carla::geom::Vector3D {Ang.X, Ang.Y, Ang.Z},
+      carla::geom::Vector3D {Acc.X, Acc.Y, Acc.Z}
     };
     write_data(info);
   }
@@ -150,6 +150,16 @@ static carla::Buffer FWorldObserver_Serialize(
 void FWorldObserver::BroadcastTick(const UCarlaEpisode &Episode, float DeltaSeconds)
 {
   auto AsyncStream = Stream.MakeAsyncDataStream(*this, Episode.GetElapsedGameTime());
+
+  // For IMU Sensor, we need to store the calculated angular velocity and
+  // acceleration inside the ActorView for example, before sending this data to
+  // the client
+  const auto &Registry = Episode.GetActorRegistry();
+  for (auto &&View : Registry)
+  {
+    View.SetAngularVelocity(FWorldObserver_GetAngularVelocity(*View.GetActor()).ToFVector());
+    View.SetAcceleration(FWorldObserver_GetAcceleration(View, View.GetVelocity(), DeltaSeconds).ToFVector());
+  }
 
   auto buffer = FWorldObserver_Serialize(
       AsyncStream.PopBufferFromPool(),

@@ -17,7 +17,8 @@ public:
 
   using IdType = uint32;
 
-  enum class ActorType : uint8 {
+  enum class ActorType : uint8
+  {
     Other,
     Vehicle,
     Walker,
@@ -59,6 +60,32 @@ public:
     return Info.Get();
   }
 
+  FVector GetVelocity() const
+  {
+    constexpr float TO_METERS = 1e-2;
+    return TheActor->GetVelocity() * TO_METERS;
+  }
+
+  FVector GetAngularVelocity() const
+  {
+    return Info->AngularVelocity;
+  }
+
+  FVector GetAcceleration() const
+  {
+    return Info->Acceleration;
+  }
+
+  void SetAngularVelocity(const FVector &AngularVelocity) const
+  {
+    Info->AngularVelocity = AngularVelocity;
+  }
+
+  void SetAcceleration(const FVector &Acceleration) const
+  {
+    Info->Acceleration = Acceleration;
+  }
+
 private:
 
   friend class FActorRegistry;
@@ -66,7 +93,8 @@ private:
   FActorView(IdType ActorId, AActor &Actor, TSharedPtr<const FActorInfo> Info)
     : Id(ActorId),
       TheActor(&Actor),
-      Info(std::move(Info)) {}
+      Info(std::move(Info))
+  {}
 
   IdType Id = 0u;
 
