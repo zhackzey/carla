@@ -32,7 +32,8 @@ void AIMUSensor::Tick(float DeltaSeconds)
     FActorView SensorView = Episode.FindActor(this);
     FActorView VehicleView = Episode.FindActor(Vehicle);
 
-    // Get Vehicle Transform and build its inverse rotation transform
+    // Get Vehicle Transform and build its inverse rotation transform. Inverse
+    // rotation will be used for building for transforming coording
     FTransform VehicleTransform = VehicleView.GetActor()->GetTransform();
     FVector VehicleLocation = VehicleTransform.GetLocation();
 
@@ -76,12 +77,16 @@ void AIMUSensor::Tick(float DeltaSeconds)
 
     // Convert to sensor coordinates
     inv_vehicle_transform.TransformPoint(vehicle_acc);
-    vehicle_acc = inv_vehicle_transform.location - vehicle_transform.location;
+    inv_sensor_transform.TransformPoint(vehicle_acc);
 
-    cg::Vector3D Acceleration = vehicle_acc;
+    inv_vehicle_transform.TransformPoint(sensor_acc);
+    inv_sensor_transform.TransformPoint(sensor_acc);
+
+      cg::Vector3D Acceleration = vehicle_acc + sensor_acc;
 
     // Angular Velocity (Gyroscope): Sum of the sensor and vehicle angular
-    // velocity in sensor coordinates
+    // velocity in sensor coordinates. Calculations to convert between
+    // coordinates should be similar to accelerometer.
 
     // Get World Coordinates
     FVector SensorAngVel = SensorView.GetAngularVelocity();
