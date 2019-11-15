@@ -28,6 +28,12 @@ namespace geom {
     }
 
     template <typename T>
+    static constexpr T Pi4() {
+      static_assert(std::is_floating_point<T>::value, "type must be floating point");
+      return static_cast<T>(Pi<T>() / T(4.0));
+    }
+
+    template <typename T>
     static constexpr T ToDegrees(T rad) {
       static_assert(std::is_floating_point<T>::value, "type must be floating point");
       return rad * (T(180.0) / Pi<T>());
