@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5.1)
 project(libcarla-client)
 
+# needed for Traffic Manager so far
+set(CPLUS_INCLUDE_PATH "/usr/include/python2.7/")
+
 # Install Recast&Detour libraries
 install(DIRECTORY "${RECAST_INCLUDE_PATH}/recast" DESTINATION include/system)
 file(GLOB libcarla_carla_recastlib "${RECAST_LIB_PATH}/*.*")
