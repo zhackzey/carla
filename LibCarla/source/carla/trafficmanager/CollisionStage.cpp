@@ -123,8 +123,8 @@ namespace CollisionStageConstants {
 
             debug_helper.DrawLine(
               ego_location + cg::Location(0, 0, 2),
-              other_location + cg::Location(0, 0, 2), 0.2,
-              {255u, 0u, 0u}, 0.1
+              other_location + cg::Location(0, 0, 2),
+              0.2f, {255u, 0u, 0u}, 0.1f
             );
 
             if (parameters.GetCollisionDetection(ego_actor, actor) &&
