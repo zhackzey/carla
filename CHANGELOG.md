@@ -1,6 +1,10 @@
 ## Latest
   * Added new sensor: Inertial measurement unit (IMU)
   * Moved GNSS sensor from client to server side
+  * New features about pedestrians:
+    * They will try to avoid vehicles
+    * They can walk only through sidewalks, and cross the road through the crosswalk zones defined
+    * A user defined % of pedestrians will be allowed to cross roads freely.
   * Now all the camera-based sensors are provided with an additional parametrized lens distortion shader
   * API changes:
     - Lidar: `range` is now set in meters, not in centimeters
