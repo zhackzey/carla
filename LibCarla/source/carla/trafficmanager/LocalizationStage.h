@@ -44,7 +44,7 @@ namespace cc = carla::client;
     /// Section keys to switch between the output data frames.
     bool planner_frame_selector;
     bool collision_frame_selector;
-    bool previous_collision_selector;
+    bool collision_frame_ready;
     bool traffic_light_frame_selector;
     /// Output data frames to be shared with the motion planner stage.
     std::shared_ptr<LocalizationToPlannerFrame> planner_frame_a;
@@ -90,13 +90,14 @@ namespace cc = carla::client;
   public:
 
     LocalizationStage(
-        std::shared_ptr<LocalizationToPlannerMessenger> planner_messenger,
-        std::shared_ptr<LocalizationToCollisionMessenger> collision_messenger,
-        std::shared_ptr<LocalizationToTrafficLightMessenger> traffic_light_messenger,
-        AtomicActorSet &registered_actors,
-        InMemoryMap &local_map,
-        Parameters &parameters,
-        cc::DebugHelper &debug_helper);
+      std::string stage_name,
+      std::shared_ptr<LocalizationToPlannerMessenger> planner_messenger,
+      std::shared_ptr<LocalizationToCollisionMessenger> collision_messenger,
+      std::shared_ptr<LocalizationToTrafficLightMessenger> traffic_light_messenger,
+      AtomicActorSet &registered_actors,
+      InMemoryMap &local_map,
+      Parameters &parameters,
+      cc::DebugHelper &debug_helper);
 
     ~LocalizationStage();
 

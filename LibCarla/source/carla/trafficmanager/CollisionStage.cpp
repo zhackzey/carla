@@ -12,10 +12,13 @@ namespace CollisionStageConstants {
   static const float HIGHWAY_TIME_HORIZON = 5.0f;
   static const float CRAWL_SPEED = 10.0f / 3.6f;
   static const float BOUNDARY_EDGE_LENGTH = 2.0f;
+  static const float MINIMUM_GRID_EXTENSION = 10.0f;
+  static const float MAX_COLLISION_RADIUS = 100.0f;
 }
   using namespace  CollisionStageConstants;
 
   CollisionStage::CollisionStage(
+      std::string stage_name,
       std::shared_ptr<LocalizationToCollisionMessenger> localization_messenger,
       std::shared_ptr<CollisionToPlannerMessenger> planner_messenger,
       cc::World &world,
@@ -25,7 +28,8 @@ namespace CollisionStageConstants {
       planner_messenger(planner_messenger),
       world(world),
       parameters(parameters),
-      debug_helper(debug_helper) {
+      debug_helper(debug_helper),
+      PipelineStage(stage_name) {
 
     // Initializing clock for checking unregistered actors periodically.
     last_world_actors_pass_instance = chr::system_clock::now();
@@ -95,10 +99,10 @@ namespace CollisionStageConstants {
 
       // DrawBoundary(GetGeodesicBoundary(ego_actor));
 
-      // Retrieve actors around ego actor.
-      std::unordered_set<ActorId> actor_id_list = vicinity_grid.GetActors(ego_actor);
-      bool collision_hazard = false;
+      // Retrieve actors around the path of the ego vehicle.
+      std::unordered_set<ActorId> actor_id_list = GetPotentialVehicleObstacles(ego_actor);
 
+      bool collision_hazard = false;
       // Check every actor in the vicinity if it poses a collision hazard.
       for (auto j = actor_id_list.begin(); (j != actor_id_list.end()) && !collision_hazard; ++j) {
         ActorId actor_id = *j;
@@ -111,11 +115,25 @@ namespace CollisionStageConstants {
             actor = unregistered_actors.at(actor_id);
           }
 
-          if (actor_id != ego_actor_id &&
-              parameters.GetCollisionDetection(ego_actor, actor) &&
-              NegotiateCollision(ego_actor, actor)) {
+          cg::Location ego_location = ego_actor->GetLocation();
+          cg::Location other_location = actor->GetLocation();
 
-            collision_hazard = true;
+          if (actor_id != ego_actor_id &&
+              (cg::Math::DistanceSquared(ego_location, other_location)
+              < std::pow(MAX_COLLISION_RADIUS, 2)) &&
+              (std::abs(ego_location.z - other_location.z) < VERTICAL_OVERLAP_THRESHOLD)) {
+
+            // debug_helper.DrawLine(
+            //   ego_location + cg::Location(0, 0, 2),
+            //   other_location + cg::Location(0, 0, 2),
+            //   0.2f, {255u, 0u, 0u}, 0.1f
+            // );
+
+            if (parameters.GetCollisionDetection(ego_actor, actor) &&
+                NegotiateCollision(ego_actor, actor)) {
+
+              collision_hazard = true;
+            }
           }
 
         } catch (const std::exception &e) {
@@ -171,58 +189,36 @@ namespace CollisionStageConstants {
   bool CollisionStage::NegotiateCollision(const Actor &reference_vehicle, const Actor &other_vehicle) const {
 
     bool hazard = false;
-    bool geodesic_overlap = false;
 
-    float reference_height = reference_vehicle->GetLocation().z;
-    float other_height = other_vehicle->GetLocation().z;
-    if (abs(reference_height - other_height) < VERTICAL_OVERLAP_THRESHOLD) {
+    Polygon reference_geodesic_polygon = GetPolygon(GetGeodesicBoundary(reference_vehicle));
+    Polygon other_geodesic_polygon = GetPolygon(GetGeodesicBoundary(other_vehicle));
+    Polygon reference_polygon = GetPolygon(GetBoundary(reference_vehicle));
+    Polygon other_polygon = GetPolygon(GetBoundary(other_vehicle));
 
-      LocationList reference_geodesic_bbox = GetGeodesicBoundary(reference_vehicle);
-      LocationList other_geodesic_bbox = GetGeodesicBoundary(other_vehicle);
+    double reference_vehicle_to_other_geodesic = bg::distance(reference_polygon, other_geodesic_polygon);
+    double other_vehicle_to_reference_geodesic = bg::distance(other_polygon, reference_geodesic_polygon);
 
-      geodesic_overlap = CheckOverlap(reference_geodesic_bbox, other_geodesic_bbox);
+    cg::Vector3D reference_heading = reference_vehicle->GetTransform().GetForwardVector();
+    cg::Vector3D other_heading = other_vehicle->GetTransform().GetForwardVector();
+    cg::Vector3D reference_to_other = other_vehicle->GetLocation() - reference_vehicle->GetLocation();
+    cg::Vector3D other_to_reference = reference_vehicle->GetLocation() - other_vehicle->GetLocation();
 
-      Polygon reference_geodesic_polygon = GetPolygon(reference_geodesic_bbox);
-      Polygon other_geodesic_polygon = GetPolygon(other_geodesic_bbox);
-      Polygon reference_polygon = GetPolygon(GetBoundary(reference_vehicle));
-      Polygon other_polygon = GetPolygon(GetBoundary(other_vehicle));
+    float inter_geodesic_distance = bg::distance(reference_geodesic_polygon, other_geodesic_polygon);
+    float inter_bbox_distance = bg::distance(reference_polygon, other_polygon);
 
-      double reference_vehicle_to_other_geodesic = bg::distance(reference_polygon, other_geodesic_polygon);
-      double other_vehicle_to_reference_geodesic = bg::distance(other_polygon, reference_geodesic_polygon);
+    // Whichever vehicle's path is farthest away from the other vehicle gets
+    // priority to move.
+    if (inter_geodesic_distance < 0.1 &&
+        ((inter_bbox_distance > 0.1 &&
+         reference_vehicle_to_other_geodesic > other_vehicle_to_reference_geodesic) ||
+         (inter_bbox_distance < 0.1 &&
+          cg::Math::Dot(reference_heading, reference_to_other) >
+          cg::Math::Dot(other_heading, other_to_reference)))) {
 
-      // Whichever vehicle's path is farthest away from the other vehicle gets
-      // priority to move.
-      if (geodesic_overlap &&
-          reference_vehicle_to_other_geodesic > other_vehicle_to_reference_geodesic) {
-        hazard = true;
-      }
+      hazard = true;
     }
 
     return hazard;
-  }
-
-  bool CollisionStage::CheckOverlap(
-      const LocationList &boundary_a,
-      const LocationList &boundary_b) const {
-
-    bool overlap = false;
-    if (boundary_a.size() > 0 && boundary_b.size() > 0) {
-
-      Polygon reference_polygon = GetPolygon(boundary_a);
-      Polygon other_polygon = GetPolygon(boundary_b);
-
-      std::deque<Polygon> output;
-      bg::intersection(reference_polygon, other_polygon, output);
-
-      for (uint j = 0u; j < output.size() && !overlap; ++j) {
-        Polygon &p = output.at(j);
-        if (bg::area(p) > ZERO_AREA) {
-          overlap = true;
-        }
-      }
-    }
-
-    return overlap;
   }
 
   traffic_manager::Polygon CollisionStage::GetPolygon(const LocationList &boundary) const {
@@ -245,19 +241,9 @@ namespace CollisionStageConstants {
 
     if (vehicle_id_to_index.find(actor->GetId()) != vehicle_id_to_index.end()) {
 
-      float velocity = actor->GetVelocity().Length();
       cg::Location vehicle_location = actor->GetLocation();
 
-      float bbox_extension = BOUNDARY_EXTENSION_MINIMUM;
-      if (velocity > HIGHWAY_SPEED) {
-        bbox_extension = HIGHWAY_TIME_HORIZON * velocity;
-      } else if (velocity < CRAWL_SPEED) {
-        bbox_extension = BOUNDARY_EXTENSION_MINIMUM;
-      } else {
-        bbox_extension = std::sqrt(EXTENSION_SQUARE_POINT * velocity) +
-                         velocity * TIME_HORIZON +
-                         BOUNDARY_EXTENSION_MINIMUM;
-      }
+      float bbox_extension = GetBoundingBoxExtention(actor);
 
       float specific_distance_margin = parameters.GetDistanceToLeadingVehicle(actor);
       if (specific_distance_margin > 0) {
@@ -328,6 +314,38 @@ namespace CollisionStageConstants {
 
       return bbox;
     }
+  }
+
+  float CollisionStage::GetBoundingBoxExtention(const Actor &actor) const {
+
+    float velocity = actor->GetVelocity().Length();
+    float bbox_extension = BOUNDARY_EXTENSION_MINIMUM;
+    if (velocity > HIGHWAY_SPEED) {
+      bbox_extension = HIGHWAY_TIME_HORIZON * velocity;
+    } else if (velocity < CRAWL_SPEED) {
+      bbox_extension = BOUNDARY_EXTENSION_MINIMUM;
+    } else {
+      bbox_extension = std::sqrt(EXTENSION_SQUARE_POINT * velocity) +
+                        velocity * TIME_HORIZON +
+                        BOUNDARY_EXTENSION_MINIMUM;
+    }
+
+    return bbox_extension;
+  }
+
+  std::unordered_set<ActorId> CollisionStage::GetPotentialVehicleObstacles(const Actor &ego_vehicle) {
+
+    vicinity_grid.UpdateGrid(ego_vehicle);
+    float grid_extension = std::max(GetBoundingBoxExtention(ego_vehicle), MINIMUM_GRID_EXTENSION);
+    std::unordered_set<ActorId> actor_id_list;
+
+    Buffer &waypoint_buffer =  localization_frame->at(
+      vehicle_id_to_index.at(ego_vehicle->GetId())).buffer;
+
+    actor_id_list = vicinity_grid.GetActors(
+      ego_vehicle, waypoint_buffer, grid_extension);
+
+    return actor_id_list;
   }
 
   LocationList CollisionStage::GetBoundary(const Actor &actor) const {
