@@ -38,7 +38,7 @@ namespace detail {
     CheckIfWalkerExist(*walkers, *state);
 
     // add/update/delete all vehicles in crowd
-    UpdateVehiclesInCrowd(episode, false);
+    UpdateVehiclesInCrowd(episode, true);
 
     // update crowd in navigation module
     _nav.UpdateCrowd(*state);
