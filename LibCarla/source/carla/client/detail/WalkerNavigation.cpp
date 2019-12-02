@@ -99,9 +99,11 @@ namespace detail {
     // update the vehicles found
     _nav.UpdateVehicles(vehicles);
 
-    // draw for debug
+    // optional debug info
     if (show_debug) {
       if (_nav.GetCrowd() == nullptr) return;
+      
+      // draw bounding boxes for debug
       for (int i = 0; i < _nav.GetCrowd()->getAgentCount(); ++i) {
         // get the agent
         const dtCrowdAgent *agent = _nav.GetCrowd()->getAgent(i);
@@ -124,27 +126,25 @@ namespace detail {
           line1.life_time = 0.01f;
           line1.persistent_lines = false;
           // line 1
-          line1.primitive = std::move(carla::rpc::DebugShape::Line {p1, p2, 0.2});
+          line1.primitive = std::move(carla::rpc::DebugShape::Line {p1, p2, 0.2f});
           line1.color = { 0, 255, 0 };
           _client.DrawDebugShape(line1);
           // line 2
-          line1.primitive = std::move(carla::rpc::DebugShape::Line {p2, p3, 0.2});
+          line1.primitive = std::move(carla::rpc::DebugShape::Line {p2, p3, 0.2f});
           line1.color = { 255, 0, 0 };
           _client.DrawDebugShape(line1);
           // line 3
-          line1.primitive = std::move(carla::rpc::DebugShape::Line {p3, p4, 0.2});
+          line1.primitive = std::move(carla::rpc::DebugShape::Line {p3, p4, 0.2f});
           line1.color = { 0, 0, 255 };
           _client.DrawDebugShape(line1);
           // line 4
-          line1.primitive = std::move(carla::rpc::DebugShape::Line {p4, p1, 0.2});
+          line1.primitive = std::move(carla::rpc::DebugShape::Line {p4, p1, 0.2f});
           line1.color = { 255, 255, 0 };
           _client.DrawDebugShape(line1);
         }
       }
 
-      // draw speed text for debug
-      if (_nav.GetCrowd() == nullptr) return;
-
+      // draw some text for debug
       for (int i = 0; i < _nav.GetCrowd()->getAgentCount(); ++i) {
         // get the agent
         const dtCrowdAgent *agent = _nav.GetCrowd()->getAgent(i);
@@ -152,7 +152,7 @@ namespace detail {
           // draw for debug
           carla::geom::Location p1(agent->npos[0], agent->npos[2], agent->npos[1] + 1);
           std::ostringstream out;
-          out << (float) agent->params.userData;
+          out << *(float *)&agent->params.userData;
           carla::rpc::DebugShape text;
           text.life_time = 0.01f;
           text.persistent_lines = false;
