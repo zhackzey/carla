@@ -32,8 +32,8 @@ if not "%1"=="" (
     goto :arg-parse
 )
 
-set RECAST_HASH=aca316
-set RECAST_COMMIT=aca31602cd38f881e278bfe4179405265e785a68
+set RECAST_HASH=9f1d26
+set RECAST_COMMIT=9f1d2655ec3eebdbd8bda4003519d9c359f619ad
 set RECAST_SRC=recast-%RECAST_HASH%-src
 set RECAST_SRC_DIR=%BUILD_DIR%%RECAST_SRC%\
 set RECAST_INSTALL=recast-%RECAST_HASH%-install
