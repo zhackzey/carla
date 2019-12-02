@@ -43,9 +43,6 @@ namespace nav {
             if (_manager && !(_manager->GetNavigation()->HasVehicleNear(_id, 6.0f, direction))) {
                 return EventResult::End;
             } else {
-                // make look at the next point to go
-                carla::geom::Location location;
-                _manager->GetNavigation()->SetWalkerLookAt(_id, crosswalkEnd);
                 return EventResult::Continue;
             }
         }
