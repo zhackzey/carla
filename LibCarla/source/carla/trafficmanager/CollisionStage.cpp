@@ -100,7 +100,8 @@ namespace CollisionStageConstants {
       // DrawBoundary(GetGeodesicBoundary(ego_actor));
 
       // Retrieve actors around the path of the ego vehicle.
-      std::unordered_set<ActorId> actor_id_list = GetPotentialVehicleObstacles(ego_actor);
+      // std::unordered_set<ActorId> actor_id_list = GetPotentialVehicleObstacles(ego_actor);
+      std::unordered_set<ActorId>& actor_id_list = data.overlapping_actors;
 
       bool collision_hazard = false;
       // Check every actor in the vicinity if it poses a collision hazard.
@@ -123,11 +124,11 @@ namespace CollisionStageConstants {
               < std::pow(MAX_COLLISION_RADIUS, 2)) &&
               (std::abs(ego_location.z - other_location.z) < VERTICAL_OVERLAP_THRESHOLD)) {
 
-            // debug_helper.DrawLine(
-            //   ego_location + cg::Location(0, 0, 2),
-            //   other_location + cg::Location(0, 0, 2),
-            //   0.2f, {255u, 0u, 0u}, 0.1f
-            // );
+            debug_helper.DrawLine(
+              ego_location + cg::Location(0, 0, 2),
+              other_location + cg::Location(0, 0, 2),
+              0.2f, {255u, 0u, 0u}, 0.1f
+            );
 
             if (parameters.GetCollisionDetection(ego_actor, actor) &&
                 NegotiateCollision(ego_actor, actor)) {
