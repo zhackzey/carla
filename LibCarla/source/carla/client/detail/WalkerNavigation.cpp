@@ -38,7 +38,11 @@ namespace detail {
     CheckIfWalkerExist(*walkers, *state);
 
     // add/update/delete all vehicles in crowd
+<<<<<<< HEAD
     UpdateVehiclesInCrowd(episode, true);
+=======
+    UpdateVehiclesInCrowd(episode, false);
+>>>>>>> pedestrian_crossing
 
     // update crowd in navigation module
     _nav.UpdateCrowd(*state);
@@ -126,6 +130,7 @@ namespace detail {
           line1.life_time = 0.01f;
           line1.persistent_lines = false;
           // line 1
+<<<<<<< HEAD
           line1.primitive = std::move(carla::rpc::DebugShape::Line {p1, p2, 0.2f});
           line1.color = { 0, 255, 0 };
           _client.DrawDebugShape(line1);
@@ -139,6 +144,21 @@ namespace detail {
           _client.DrawDebugShape(line1);
           // line 4
           line1.primitive = std::move(carla::rpc::DebugShape::Line {p4, p1, 0.2f});
+=======
+          line1.primitive = carla::rpc::DebugShape::Line {p1, p2, 0.2f};
+          line1.color = { 0, 255, 0 };
+          _client.DrawDebugShape(line1);
+          // line 2
+          line1.primitive = carla::rpc::DebugShape::Line {p2, p3, 0.2f};
+          line1.color = { 255, 0, 0 };
+          _client.DrawDebugShape(line1);
+          // line 3
+          line1.primitive = carla::rpc::DebugShape::Line {p3, p4, 0.2f};
+          line1.color = { 0, 0, 255 };
+          _client.DrawDebugShape(line1);
+          // line 4
+          line1.primitive = carla::rpc::DebugShape::Line {p4, p1, 0.2f};
+>>>>>>> pedestrian_crossing
           line1.color = { 255, 255, 0 };
           _client.DrawDebugShape(line1);
         }
@@ -152,11 +172,19 @@ namespace detail {
           // draw for debug
           carla::geom::Location p1(agent->npos[0], agent->npos[2], agent->npos[1] + 1);
           std::ostringstream out;
+<<<<<<< HEAD
           out << *(float *)&agent->params.userData;
           carla::rpc::DebugShape text;
           text.life_time = 0.01f;
           text.persistent_lines = false;
           text.primitive = std::move(carla::rpc::DebugShape::String {p1, out.str(), false});
+=======
+          out << *reinterpret_cast<const float *>(&agent->params.userData);
+          carla::rpc::DebugShape text;
+          text.life_time = 0.01f;
+          text.persistent_lines = false;
+          text.primitive = carla::rpc::DebugShape::String {p1, out.str(), false};
+>>>>>>> pedestrian_crossing
           text.color = { 0, 255, 0 };
           _client.DrawDebugShape(text);
         }
