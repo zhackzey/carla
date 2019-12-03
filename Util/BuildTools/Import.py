@@ -226,6 +226,9 @@ def import_assets_from_json_list(json_list):
             # segmentation
             move_assets_commandlet(package_name, maps)
 
+            # we need to build the binary file for navigation of pedestrians
+            build_binary_for_navigation(package_name, dirname, maps)
+
             # We prepare only the maps for cooking after moving them. Props cooking will be done from Package.sh script.
             prepare_maps_commandlet_for_cooking(package_name, only_prepare_maps=True)
 
@@ -248,6 +251,62 @@ def move_assets_commandlet(package_name, maps):
 
     invoke_commandlet(commandlet_name, commandlet_arguments)
 
+# build the binary file for navigation of pedestrians for that map
+def build_binary_for_navigation(package_name, dirname, maps):
+    folder = os.path.join(CARLA_ROOT_PATH, "Util", "DockerUtils")
+
+    # process each map
+    for umap in maps:
+        # copy the XODR file into docker utils folder
+        if "xodr" in umap and umap["xodr"] and os.path.isfile(os.path.join(dirname, umap["xodr"])):
+            # Make sure the `.xodr` file have the same name than the `.umap`
+            xodr_path_source = os.path.abspath(os.path.join(dirname, umap["xodr"]))
+            umap_name = umap["name"]
+            xodr_name = '.'.join([umap_name, "xodr"])
+            xodr_path_target = os.path.join(folder, xodr_name)
+            # copy
+            print('Copying "' + xodr_path_source + '" to "' + xodr_path_target + '"')
+            shutil.copy2(xodr_path_source, xodr_path_target)
+        
+        # copy the FBX file into docker utils folder
+        if "source" in umap and umap["source"] and os.path.isfile(os.path.join(dirname, umap["source"])):
+            # Make sure the `.fbx` file have the same name than the `.umap`
+            fbx_path_source = os.path.abspath(os.path.join(dirname, umap["source"]))
+            umap_name = umap["name"]
+            fbx_name = '.'.join([umap_name, "fbx"])
+            fbx_path_target = os.path.join(folder, fbx_name)
+            # copy
+            print('Copying "' + fbx_path_source + '" to "' + fbx_path_target + '"')
+            shutil.copy2(fbx_path_source, fbx_path_target)
+
+        # make the conversion
+        if os.name == "nt":
+            subprocess.call(["%s\\build.bat" % folder, umap_name], cwd=folder, shell=True)
+        else:
+            subprocess.call(["%s/build.sh" % folder, umap_name], cwd=folder, shell=True)
+
+        # copy the binary file
+        nav_folder_target = os.path.join(
+            CARLA_ROOT_PATH,
+            "Unreal",
+            "CarlaUE4",
+            "Content",
+            package_name,
+            "Maps",
+            umap_name,
+            "Nav")
+
+        if not os.path.exists(nav_folder_target):
+            os.makedirs(nav_folder_target)
+
+        nav_path_source = os.path.join(folder, "%s.bin" % umap_name)
+        nav_path_target = os.path.join(nav_folder_target, "%s.bin" % umap_name)
+        print('Copying "' + nav_path_source + '" to "' + nav_path_target + '"')
+        shutil.copy2(nav_path_source, nav_path_target)
+
+        # remove files
+        os.remove(fbx_path_target)
+        os.remove(xodr_path_target)
 
 def main():
     import_folder = os.path.join(CARLA_ROOT_PATH, "Import")
