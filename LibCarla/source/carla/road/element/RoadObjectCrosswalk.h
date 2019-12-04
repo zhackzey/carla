@@ -57,6 +57,8 @@ namespace element {
     double GetHeading() const { return _hdg; };
     double GetPitch() const { return _pitch; };
     double GetRoll() const { return _roll; };
+    double GetZOffset() const { return _zOffset; };
+    std::string GetOrientation() const { return _orientation; };
     const std::vector<CrosswalkPoint> &GetPoints() const { return _points; };
 
   private:

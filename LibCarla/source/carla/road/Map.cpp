@@ -395,25 +395,25 @@ namespace road {
 
           // move perpendicular ('t')
           geom::Transform pivot = base;
-          pivot.rotation.yaw -= geom::Math::ToDegrees<float>(crosswalk->GetHeading());
+          pivot.rotation.yaw -= geom::Math::ToDegrees<float>(static_cast<float>(crosswalk->GetHeading()));
           pivot.rotation.yaw -= 90;   // move perpendicular to 's' for the lateral offset
-          geom::Vector3D v(crosswalk->GetT(), 0.0f, 0.0f);
+          geom::Vector3D v(static_cast<float>(crosswalk->GetT()), 0.0f, 0.0f);
           pivot.TransformPoint(v);
           // restore pivot position and orientation
           pivot = base;
           pivot.location = v;
-          pivot.rotation.yaw -= geom::Math::ToDegrees<float>(crosswalk->GetHeading());
+          pivot.rotation.yaw -= geom::Math::ToDegrees<float>(static_cast<float>(crosswalk->GetHeading()));
 
           // calculate all the corners
           for (auto corner : crosswalk->GetPoints()) {
-            geom::Vector3D v(corner.u, corner.v, corner.z);
+            geom::Vector3D v2(static_cast<float>(corner.u), static_cast<float>(corner.v), static_cast<float>(corner.z));
             // set the width larger to contact with the sidewalk (in case they have gutter area)
             if (corner.u < 0)
-              v.x -= 1.0f;
+              v2.x -= 1.0f;
             else
-              v.x += 1.0f;
-            pivot.TransformPoint(v);
-            result.push_back(v);
+              v2.x += 1.0f;
+            pivot.TransformPoint(v2);
+            result.push_back(v2);
           }
         } 
       }
