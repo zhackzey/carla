@@ -1,4 +1,5 @@
 ## Latest
+  * Support for OpenGL and Vulkan in docker + headless mode
   * Added new sensor: Inertial measurement unit (IMU)
   * Moved GNSS sensor from client to server side
   * Now all the camera-based sensors are provided with an additional parametrized lens distortion shader
