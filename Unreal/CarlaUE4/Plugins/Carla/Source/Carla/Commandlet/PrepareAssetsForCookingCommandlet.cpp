@@ -6,8 +6,10 @@
 
 #include "PrepareAssetsForCookingCommandlet.h"
 
-#include "HAL/PlatformFilemanager.h"
+#if WITH_EDITOR
 #include "FileHelpers.h"
+#endif
+#include "HAL/PlatformFilemanager.h"
 #include "UObject/ConstructorHelpers.h"
 
 UPrepareAssetsForCookingCommandlet::UPrepareAssetsForCookingCommandlet()
@@ -221,7 +223,6 @@ bool UPrepareAssetsForCookingCommandlet::SaveWorld(
   }
 
   #if WITH_EDITOR
-  // FEditorFileUtils::SaveMap(World, PackagePath);
   UEditorLoadingAndSavingUtils::SaveMap(World, PackagePath);
   #endif
 
@@ -455,7 +456,6 @@ int32 UPrepareAssetsForCookingCommandlet::Main(const FString &Params)
   }
 
   #if WITH_EDITOR
-  // FEditorFileUtils::SaveDirtyPackages(false, false, true);
   UEditorLoadingAndSavingUtils::SaveDirtyPackages(true, true);
   #endif
 
