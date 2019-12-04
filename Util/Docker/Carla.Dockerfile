@@ -12,7 +12,5 @@ RUN cd /home/ue4 && \
   make CarlaUE4Editor && \
   make PythonAPI && \
   make build.utils && \
-  make package && \
-  rm -r /home/ue4/carla/Dist
 
 WORKDIR /home/ue4/carla
