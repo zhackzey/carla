@@ -1,4 +1,5 @@
 ## Latest
+  * Added exporter plugin for UE4 to allow export meshes ready for Recast calculation.
   * Added new sensor: Inertial measurement unit (IMU)
   * Moved GNSS sensor from client to server side
   * Now all the camera-based sensors are provided with an additional parametrized lens distortion shader
