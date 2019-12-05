@@ -292,7 +292,7 @@ def build_binary_for_navigation(package_name, dirname, maps):
         if os.name == "nt":
             subprocess.call(["%s\\build.bat" % folder, umap_name], cwd=folder, shell=True)
         else:
-            subprocess.call(["%s/build.sh" % folder, umap_name], cwd=folder, shell=True)
+            subprocess.call(["%s/sh build.sh" % folder, umap_name], cwd=folder, shell=True)
 
         # copy the binary file
         nav_folder_target = os.path.join(
